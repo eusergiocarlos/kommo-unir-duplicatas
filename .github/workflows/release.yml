@@ -43,10 +43,10 @@ jobs:
       versao: ${{ steps.v.outputs.versao }}
       eh_tag: ${{ steps.v.outputs.eh_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Conferir tag × __version__ × pyproject.toml
@@ -78,7 +78,7 @@ jobs:
           VERSAO: ${{ steps.v.outputs.versao }}
           REPOSITORIO: ${{ github.repository }}
         run: python -B .github/scripts/notas_release.py "$VERSAO" "$RUNNER_TEMP/notas.md" --repositorio "$REPOSITORIO"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: notas
           path: ${{ runner.temp }}/notas.md
@@ -104,10 +104,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_BUILD }}
       # O script usa .venv local (cria com `py -3` se faltar). Criamos antes com o Python do setup-python
@@ -136,7 +136,7 @@ jobs:
       - name: Renomear SHA256SUMS (evita colisão com o do Linux)
         shell: bash
         run: mv dist/windows/SHA256SUMS.txt dist/windows/SHA256SUMS-windows.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-windows
           path: |
@@ -163,10 +163,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_BUILD }}
       - name: Dependências do sistema (Tk para o PyInstaller copiar; squashfs-tools para o verificador)
@@ -188,7 +188,7 @@ jobs:
         run: |
           sha256sum -c SHA256SUMS.txt
           mv SHA256SUMS.txt SHA256SUMS-linux.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-linux
           path: |
@@ -207,10 +207,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Instalar cyclonedx-py (versão fixa)
@@ -226,7 +226,7 @@ jobs:
           mkdir -p sbom
           cyclonedx-py requirements --pyproject pyproject.toml --of JSON --output-reproducible \
             -o "sbom/KommoUnirDuplicatas-${VERSAO}.cdx.json" requirements.lock
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: sbom/*.cdx.json
@@ -249,13 +249,13 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artefatos
           merge-multiple: true
       - name: Listar o que será atestado
         run: ls -la artefatos
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             artefatos/*.zip
@@ -276,7 +276,7 @@ jobs:
     permissions:
       contents: write          # criar o Release (rascunho) e anexar arquivos
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artefatos
           merge-multiple: true
