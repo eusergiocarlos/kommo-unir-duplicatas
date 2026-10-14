@@ -1,0 +1,311 @@
+# Release: testes → builds (Windows, Linux) → SBOM → atestação de proveniência → Release RASCUNHO.
+# NADA é publicado automaticamente: o job final cria um Release em RASCUNHO (draft), e só roda depois da
+# aprovação manual do environment "release". Quem publica é uma pessoa, na página de Releases.
+# Passo a passo e configuração do GitHub: docs/operations/ci-cd.md
+#
+# Gatilhos:
+#   - push de tag vX.Y.Z (ex.: v1.2.0)  → pipeline completo, termina no rascunho.
+#   - workflow_dispatch                  → se rodado a partir de uma TAG v*.*.*, igual ao acima; se rodado a
+#                                          partir de um branch, é um ENSAIO: gera e guarda os artefatos, mas
+#                                          não cria Release.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+# Nada por padrão; cada job declara só o que precisa.
+permissions: {}
+
+# Uma release por ref de cada vez; nunca cancela uma em andamento.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUTF8: "1"
+  # Python do build = o do cabeçalho de requirements-dev.lock (o lock é instalado com --require-hashes).
+  # Se o lock for regerado com outra versão, atualize aqui.
+  PYTHON_BUILD: "3.14"
+
+jobs:
+  # ------------------------------------------------------------------------------------------------ versão
+  versao:
+    name: versão e notas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      versao: ${{ steps.v.outputs.versao }}
+      eh_tag: ${{ steps.v.outputs.eh_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Conferir tag × __version__ × pyproject.toml
+        id: v
+        env:
+          REF: ${{ github.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          versao="$(python -B scripts/empacotar.py versao src/kommo_duplicatas/__init__.py)"
+          proj="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          echo "__init__.py: $versao · pyproject.toml: $proj · ref: $REF"
+          [ "$versao" = "$proj" ] || { echo "::error::__version__ ($versao) ≠ pyproject.toml ($proj)"; exit 1; }
+          eh_tag=false
+          if [ "$REF_TYPE" = "tag" ]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]*)?$ ]] \
+              || { echo "::error::tag fora do padrão vX.Y.Z: $REF_NAME"; exit 1; }
+            [ "${REF_NAME#v}" = "$versao" ] \
+              || { echo "::error::tag $REF_NAME não corresponde à versão do código ($versao)"; exit 1; }
+            eh_tag=true
+          else
+            echo "::notice::Execução a partir de branch ($REF_NAME): ENSAIO — artefatos são gerados, nenhum Release é criado."
+          fi
+          echo "versao=$versao" >> "$GITHUB_OUTPUT"
+          echo "eh_tag=$eh_tag" >> "$GITHUB_OUTPUT"
+      - name: Notas a partir do CHANGELOG.md
+        env:
+          VERSAO: ${{ steps.v.outputs.versao }}
+          REPOSITORIO: ${{ github.repository }}
+        run: python -B .github/scripts/notas_release.py "$VERSAO" "$RUNNER_TEMP/notas.md" --repositorio "$REPOSITORIO"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notas
+          path: ${{ runner.temp }}/notas.md
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------------------------------------------ testes
+  # Os MESMOS jobs do CI (lint, testes em Windows/Linux, segurança, docs), reaproveitados.
+  testes:
+    name: CI
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    secrets:
+      KOMMO_TERMOS_SENSIVEIS: ${{ secrets.KOMMO_TERMOS_SENSIVEIS }}
+
+  # ------------------------------------------------------------------------------------------------ Windows
+  build-windows:
+    name: build Windows (zip portátil)
+    needs: [versao, testes]
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_BUILD }}
+      # O script usa .venv local (cria com `py -3` se faltar). Criamos antes com o Python do setup-python
+      # para não depender de qual Python o `py` escolheria no runner.
+      - name: Criar .venv com o Python do build
+        shell: pwsh
+        run: python -m venv .venv
+      # Data fixa nos zips = data do commit (builds reproduzíveis; ver scripts/empacotar.py).
+      - name: SOURCE_DATE_EPOCH
+        shell: bash
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+      # scripts/build_windows.ps1: PyInstaller onedir → dist/windows/*.zip + SHA256SUMS.txt e roda o verificador
+      # de privacidade (fail-closed). Com CI=true (padrão no Actions) o script usa --sem-termos-padrao + termo-
+      # sentinela (usuário "runner" daria falso positivo) + KOMMO_TERMOS_SENSIVEIS; checagens estruturais mantidas.
+      - name: Build (scripts/build_windows.ps1)
+        shell: pwsh
+        env:
+          KOMMO_TERMOS_SENSIVEIS: ${{ secrets.KOMMO_TERMOS_SENSIVEIS }}
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_windows.ps1
+          exit $LASTEXITCODE
+      - name: Conferir SHA256SUMS
+        shell: bash
+        working-directory: dist/windows
+        run: sha256sum -c SHA256SUMS.txt
+      - name: Renomear SHA256SUMS (evita colisão com o do Linux)
+        shell: bash
+        run: mv dist/windows/SHA256SUMS.txt dist/windows/SHA256SUMS-windows.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-windows
+          path: |
+            dist/windows/*.zip
+            dist/windows/SHA256SUMS-windows.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------------------------------------------ Linux
+  # *** NÃO TESTADO *** scripts/build_linux.sh nunca rodou numa máquina Linux real (foi escrito no Windows).
+  # Por isso este job tem continue-on-error: true — falhar aqui NÃO impede o rascunho com o build Windows.
+  # O dono deve validar o build numa distro real (packaging/linux/README.md, "Como testar") antes de confiar
+  # e, só então, remover o continue-on-error.
+  # Falso positivo "runner" (usuário do runner × módulos do Python como asyncio.runners): evitado porque, com
+  # CI=true, scripts/build_linux.sh roda o verificador com --sem-termos-padrao + termo-sentinela.
+  # AppImage: o appimagetool NÃO é baixado aqui (não há como fixar/verificar o checksum offline); o script então
+  # gera só o .tar.gz, que é o formato principal.
+  build-linux:
+    name: build Linux (tar.gz) — experimental
+    needs: [versao, testes]
+    runs-on: ubuntu-22.04          # glibc mais antiga = binário roda em mais distros
+    timeout-minutes: 45
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_BUILD }}
+      - name: Dependências do sistema (Tk para o PyInstaller copiar; squashfs-tools para o verificador)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tk-dev squashfs-tools
+      - name: Criar .venv com o Python do build
+        run: |
+          python -m venv .venv
+          .venv/bin/python -c "import tkinter" || echo "::warning::tkinter indisponível no Python do build"
+      - name: SOURCE_DATE_EPOCH
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+      - name: Build (scripts/build_linux.sh)
+        env:
+          KOMMO_TERMOS_SENSIVEIS: ${{ secrets.KOMMO_TERMOS_SENSIVEIS }}
+        run: bash scripts/build_linux.sh
+      - name: Conferir e renomear SHA256SUMS
+        working-directory: dist/linux
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          mv SHA256SUMS.txt SHA256SUMS-linux.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-linux
+          path: |
+            dist/linux/*.tar.gz
+            dist/linux/*.AppImage
+            dist/linux/SHA256SUMS-linux.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------------------------------------------ SBOM
+  sbom:
+    name: SBOM (CycloneDX)
+    needs: [versao]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar cyclonedx-py (versão fixa)
+        run: python -m pip install "cyclonedx-bom==7.5.0"
+      # SBOM das dependências de EXECUÇÃO (requirements.lock = o que vai dentro do pacote). Ferramentas de
+      # build (PyInstaller etc.) ficam em requirements-dev.lock e não são listadas aqui.
+      - name: Gerar SBOM a partir do lock
+        env:
+          VERSAO: ${{ needs.versao.outputs.versao }}
+        run: |
+          set -euo pipefail
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          mkdir -p sbom
+          cyclonedx-py requirements --pyproject pyproject.toml --of JSON --output-reproducible \
+            -o "sbom/KommoUnirDuplicatas-${VERSAO}.cdx.json" requirements.lock
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+          retention-days: 7
+
+  # ------------------------------------------------------------------------------------------------ proveniência
+  # Atestação SLSA de proveniência assinada pelo GitHub (Sigstore). Únicas permissões extras do pipeline:
+  # id-token (OIDC) e attestations, SÓ neste job. Em repositório PRIVADO isso exige GitHub Enterprise Cloud;
+  # por isso continue-on-error (o rascunho sai sem atestação e o log explica). Ver ci-cd.md.
+  atestacao:
+    name: atestação de proveniência
+    needs: [versao, build-windows, build-linux, sbom]
+    if: ${{ !cancelled() && needs.build-windows.result == 'success' && needs.sbom.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefatos
+          merge-multiple: true
+      - name: Listar o que será atestado
+        run: ls -la artefatos
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            artefatos/*.zip
+            artefatos/*.tar.gz
+            artefatos/*.AppImage
+            artefatos/*.cdx.json
+
+  # ------------------------------------------------------------------------------------------------ rascunho
+  # Exige aprovação manual: o environment "release" precisa ter "Required reviewers" (configurar no GitHub;
+  # ver ci-cd.md). Só roda para TAG. Cria o Release como RASCUNHO; publicar é manual.
+  rascunho:
+    name: Release (rascunho)
+    needs: [versao, build-windows, build-linux, sbom, atestacao]
+    if: ${{ !cancelled() && needs.versao.outputs.eh_tag == 'true' && needs.build-windows.result == 'success' && needs.sbom.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write          # criar o Release (rascunho) e anexar arquivos
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefatos
+          merge-multiple: true
+      - name: Conferir hashes de cada build e montar SHA256SUMS.txt único
+        working-directory: artefatos
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for s in SHA256SUMS-*.txt; do echo "conferindo $s"; sha256sum -c "$s"; done
+          [ -n "$(ls *.zip 2>/dev/null)" ] || { echo "::error::zip do Windows ausente"; exit 1; }
+          ls *.tar.gz >/dev/null 2>&1 || echo "::warning::build Linux ausente (job experimental falhou ou foi pulado) — rascunho só com Windows."
+          arquivos=( *.zip *.tar.gz *.AppImage *.cdx.json )
+          sha256sum "${arquivos[@]}" | sort -k2 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          rm -f SHA256SUMS-*.txt
+      - name: Criar Release em RASCUNHO (gh release create --draft)
+        working-directory: artefatos
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSAO: ${{ needs.versao.outputs.versao }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          extra=()
+          case "$VERSAO" in *-*) extra+=(--prerelease) ;; esac
+          gh release create "$TAG" --draft --verify-tag "${extra[@]}" \
+            --title "Kommo — Unir Duplicatas $VERSAO" \
+            --notes-file notas.md \
+            *.zip *.tar.gz *.AppImage *.cdx.json SHA256SUMS.txt
+          echo "::notice::Rascunho criado para $TAG. Revise e publique manualmente na página de Releases."
