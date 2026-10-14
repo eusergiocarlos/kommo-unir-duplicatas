@@ -1,0 +1,11 @@
+# CODEOWNERS — quem revisa obrigatoriamente cada parte do repositório.
+#
+# AINDA SEM DONO DEFINIDO: todas as linhas estão comentadas de propósito (não inventamos usuários/equipes).
+# Para ativar, troque <usuario-do-github> pelo seu usuário (ex.: @fulano), descomente e, em
+# Settings → Branches → regra do main, marque "Require review from Code Owners".
+#
+# * <usuario-do-github>
+# /.github/                       <usuario-do-github>
+# /scripts/                       <usuario-do-github>
+# /src/kommo_duplicatas/kommo.py  <usuario-do-github>
+# /src/kommo_duplicatas/privacy.py <usuario-do-github>

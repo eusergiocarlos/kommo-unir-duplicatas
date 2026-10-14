@@ -1,0 +1,7 @@
+# Dependências de desenvolvimento e BUILD (entrada do pip-compile) -> requirements-dev.lock.
+# Usado por scripts/build_windows.ps1 e scripts/build_linux.sh (pip install --require-hashes).
+-r requirements.in
+pytest>=8,<10
+# Cobertura no CI (ci.yml liga --cov automaticamente quando pytest_cov está instalado).
+pytest-cov>=5,<8
+pyinstaller>=6,<7

@@ -1,0 +1,13 @@
+#!/bin/sh
+# Ponto de entrada do AppImage. *** NÃO TESTADO LOCALMENTE *** (escrito no Windows).
+#
+# O AppImage é montado SOMENTE LEITURA, então a "pasta do programa" (onde o modo portátil grava data/) não
+# aceita escrita. Se o usuário não definiu KOMMO_DATA_DIR, usamos uma pasta AO LADO do arquivo .AppImage
+# (mesma ideia do modo portátil: os dados acompanham o programa e nada vai para fora sem você saber).
+set -eu
+AQUI="$(dirname "$(readlink -f "$0")")"
+if [ -z "${KOMMO_DATA_DIR:-}" ] && [ -n "${APPIMAGE:-}" ]; then
+    KOMMO_DATA_DIR="$(dirname "$APPIMAGE")/KommoUnirDuplicatas-data"
+    export KOMMO_DATA_DIR
+fi
+exec "$AQUI/usr/lib/kommo-unir-duplicatas/KommoUnirDuplicatas" "$@"

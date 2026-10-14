@@ -1,0 +1,5 @@
+# Desenvolvimento + build (faixas abertas). Reproduzível: requirements-dev.lock (de requirements-dev.in).
+-r requirements.txt
+pytest>=8
+pytest-cov>=5
+pyinstaller>=6

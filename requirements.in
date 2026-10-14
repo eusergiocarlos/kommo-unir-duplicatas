@@ -1,0 +1,3 @@
+# Dependências DIRETAS de execução, com faixa compatível (entrada do pip-compile).
+# O arquivo travado (versões exatas + hashes) é requirements.lock — gere com scripts/gerar_lock.ps1 (ou .sh).
+playwright>=1.40,<2

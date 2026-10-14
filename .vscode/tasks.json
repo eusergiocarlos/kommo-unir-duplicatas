@@ -1,0 +1,101 @@
+{
+  // Todas as tarefas usam o ambiente LOCAL .venv (crie com a primeira tarefa).
+  // "process" + executável explícito: não depende de qual shell o VS Code usa por padrão.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Instalar dependências (dev, .venv)",
+      "type": "process",
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+          "if (-not (Test-Path .venv\\Scripts\\python.exe)) { python -m venv .venv }; if (Test-Path requirements-dev.lock) { .venv\\Scripts\\python.exe -m pip install --require-hashes --no-deps -r requirements-dev.lock } else { .venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt }; exit $LASTEXITCODE"
+        ]
+      },
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-c",
+          "set -e; [ -x .venv/bin/python ] || python3 -m venv .venv; if [ -f requirements-dev.lock ]; then .venv/bin/python -m pip install --require-hashes --no-deps -r requirements-dev.lock; else .venv/bin/python -m pip install -r requirements-dev.txt; fi"
+        ]
+      },
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Rodar testes",
+      "type": "process",
+      "windows": { "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe" },
+      "linux": { "command": "${workspaceFolder}/.venv/bin/python" },
+      "args": ["-m", "pytest", "-q", "-p", "no:cacheprovider"],
+      "options": { "cwd": "${workspaceFolder}", "env": { "PYTHONDONTWRITEBYTECODE": "1" } },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Windows (pasta portátil .zip)",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\scripts\\build_windows.ps1"],
+      "linux": {
+        "command": "bash",
+        "args": ["-c", "echo 'Build Windows só roda no Windows. Use a tarefa \"Build Linux\".'; exit 1"]
+      },
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Windows (.exe único, alternativo)",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\scripts\\build_windows.ps1", "-OneFile"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Linux (tar.gz + AppImage) — só em Linux",
+      "type": "process",
+      "command": "bash",
+      "args": ["${workspaceFolder}/scripts/build_linux.sh"],
+      "windows": {
+        "command": "powershell",
+        "args": ["-NoProfile", "-Command", "Write-Host 'Build Linux só roda em Linux (precisa gerar o binário no próprio Linux).'; exit 1"]
+      },
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Verificar privacidade (projeto inteiro)",
+      "type": "process",
+      "windows": { "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe" },
+      "linux": { "command": "${workspaceFolder}/.venv/bin/python" },
+      "args": ["-B", "scripts/verificar_privacidade.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verificar privacidade (só dist/)",
+      "type": "process",
+      "windows": { "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe" },
+      "linux": { "command": "${workspaceFolder}/.venv/bin/python" },
+      "args": ["-B", "scripts/verificar_privacidade.py", "--somente-dist"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Gerar lock de dependências (requer internet)",
+      "type": "process",
+      "windows": {
+        "command": "powershell",
+        "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\scripts\\gerar_lock.ps1"]
+      },
+      "linux": { "command": "bash", "args": ["${workspaceFolder}/scripts/gerar_lock.sh"] },
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# Dependabot: PRs semanais de atualização. Detalhes e limitações: docs/operations/ci-cd.md
+#
+# ATENÇÃO (pip): o projeto instala de requirements*.lock (versões exatas + HASHES, gerados por pip-compile a
+# partir de requirements*.in). O Dependabot pode não regenerar os hashes do lock corretamente. Em todo PR de
+# pip, regenere o lock com scripts/gerar_lock.ps1 (ou .sh) e confira o diff antes de aceitar.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      # menor/patch juntos num PR só; major vem separado (pode quebrar a automação do Kommo)
+      pip-menores:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]

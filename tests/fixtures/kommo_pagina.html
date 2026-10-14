@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  Fixture montada a partir de docs/KOMMO_DOM.md (não é cópia do Kommo; os dados são fictícios).
+  Cada clique em itens/botões é anotado em window.__cliques para os testes conferirem.
+  O menu "⋯" só mostra os itens depois de clicado (como no Kommo).
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Kommo: Leads, Empresa Ficticia</title>
+<style>
+  .oculto { display: none; }
+  .modal { position: absolute; top: 40px; left: 40px; width: 600px; background: #fff; border: 1px solid #ccc; }
+</style>
+<script>
+  window.__cliques = [];
+  function anota(nome) { window.__cliques.push(nome); }
+</script>
+</head>
+<body>
+  <div class="list-top-search__summary">9195 leads: R$ 4.596</div>
+
+  <button class="button-input-with-menu" title="Mais"
+          onclick="anota('menu'); document.getElementById('menu').classList.remove('oculto')">⋯</button>
+  <ul id="menu" class="button-input__context-menu oculto">
+    <li class="js-duplicate-search" onclick="anota('item-leads')">Localizar duplicatas</li>
+    <li class="js-list-duplicate-contacts-search" onclick="anota('item-contatos')">Localizar duplicatas</li>
+    <li class="js-companies-duplicate-search" onclick="anota('item-empresas')">Localizar duplicatas de empresas</li>
+    <li class="js-export" onclick="anota('exportar')">Exportar</li>
+  </ul>
+
+  <div class="modal modal-list" id="modal">
+    <div class="modal-body">
+      <span class="modal-body__close" onclick="anota('fechar')">×</span>
+      <h2 class="modal-body__caption">Localizar e unir duplicatas — 1 de 42770</h2>
+      <div class="js-duplicate-row">
+        <div class="element__text">João da Silva Ficticio</div>
+        <div class="control-checkbox__text">(41) 99999-0000 joao.ficticio@example.com</div>
+      </div>
+      <h2 class="progress__header oculto" id="progresso">Realizando união</h2>
+      <div class="js-modal-error oculto" id="erro">
+        Ops! Algo deu errado
+        <button class="js-modal-try-again" onclick="anota('tentar')">Tentar novamente</button>
+      </div>
+      <div class="actions__doubles_action">
+        <button class="js-merge-start" onclick="anota('unir')">Unir esta duplicata</button>
+        <button class="js-merge-next" onclick="anota('pular')">Pular esta duplicata</button>
+        <button class="button-cancel" onclick="anota('cancelar')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

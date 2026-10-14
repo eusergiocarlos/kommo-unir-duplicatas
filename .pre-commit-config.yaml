@@ -1,0 +1,17 @@
+# OPCIONAL: ganchos locais antes de cada commit.  Instale à parte:  pip install pre-commit && pre-commit install
+# (pre-commit não está nas dependências do projeto.) Ver CONTRIBUTING.md.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0          # mesma versão do CI (.github/workflows/ci.yml)
+    hooks:
+      - id: ruff          # só lint; o projeto não exige `ruff format`
+
+  - repo: local
+    hooks:
+      # Varre o projeto inteiro com os termos da SUA máquina (usuário, computador, git) — fail-closed.
+      - id: verificar-privacidade
+        name: verificar privacidade (scripts/verificar_privacidade.py)
+        entry: python -B scripts/verificar_privacidade.py
+        language: system
+        pass_filenames: false
+        always_run: true

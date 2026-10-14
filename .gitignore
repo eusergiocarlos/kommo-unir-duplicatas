@@ -1,0 +1,54 @@
+# Python — bytecode guarda o caminho absoluto da máquina (C:\Users\<você>\...): nunca versionar
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Ferramentas de qualidade / cobertura (geradas localmente)
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Build do executável (PyInstaller) e empacotamento
+build/
+dist/
+*.spec
+packaging/out/
+
+# Artefatos de distribuição — vão para a página de Releases, nunca para o repositório
+*.zip
+*.exe
+*.AppImage
+*.tar.gz
+*.tgz
+SHA256SUMS*
+*.sbom*
+
+# DADOS DO USUÁRIO — nunca versionar (login do Kommo, subdomínio, logs).
+# Modo portátil: a raiz de dados é <pasta do app>/data (em dev = raiz do repositório).
+data/
+/data/
+.perfil/
+profile/
+config.json
+log.txt
+*.log
+debug/
+diagnostico.*
+modal.png
+tela.png
+
+# Editor / SO (mantém só as configs compartilhadas do VS Code)
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+.env

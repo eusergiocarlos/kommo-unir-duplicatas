@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Kommo: Leads, Empresa Exemplo</title>
+<!-- Fixture do modo privacidade (tests/test_privacy_js.py). Imita, com dados FICTÍCIOS, as classes do Kommo
+     documentadas em docs/KOMMO_DOM.md: cabeçalho com totais, lista de leads e modal de duplicatas. -->
+<script>
+  // A página tenta trocar o título durante o parse (como o Kommo faz ao montar a SPA).
+  document.title = 'Kommo: Leads, Empresa Exemplo';
+</script>
+</head>
+<body>
+  <div class="list-top-search">
+    <button class="button-input-with-menu" title="Mais" id="menu-mais">⋯</button>
+    <div class="list-top-search__summary" id="total-classe">9195 leads: R$ 4.596</div>
+    <div id="total-livre">9195 leads: R$ 4.596</div>
+    <div id="aviso-limite">Você atingiu 83% do limite</div>
+    <div id="uso-conta">5238/90000</div>
+    <div id="texto-neutro">Filtro: todos os leads ativos</div>
+  </div>
+
+  <div class="list" id="lista">
+    <div class="js-list-row list-row" id="linha-1">
+      <div class="list-row__cell">
+        <a class="list-row__template-name__name" id="nome-1" title="Fulano de Tal">Fulano de Tal</a>
+      </div>
+      <div class="list-row__cell"><span id="valor-1">R$ 1.500,00</span></div>
+      <div class="list-row__cell"><a href="tel:+5500000000000" id="tel-1">+55 00 00000-0000</a></div>
+    </div>
+    <div class="js-list-row list-row" id="linha-2">
+      <div class="list-row__cell">
+        <a class="list-row__template-name__name" id="nome-2" title="Beltrana Silva">Beltrana Silva</a>
+      </div>
+      <div class="list-row__cell"><span id="valor-2">R$ 320,00</span></div>
+      <div class="list-row__cell"><a href="mailto:exemplo@example.com" id="mail-2">exemplo@example.com</a></div>
+    </div>
+  </div>
+
+  <div class="modal">
+    <div class="modal-body">
+      <h2 class="modal-body__caption" id="caption">Localizar e unir duplicatas — 1 de 42770</h2>
+      <div class="merge-form">
+        <div class="merge-form__field">
+          <span class="merge-form__field-name" id="mf-nome">Fulano de Tal</span>
+        </div>
+        <div class="form-result">
+          <span class="form-result__name" id="fr-nome">Fulano de Tal (2)</span>
+          <span class="form-result__text" id="fr-texto">Ciclano Souza</span>
+        </div>
+        <label class="control-checkbox"><span class="control-checkbox__text" id="cb-texto">Ciclano Souza</span></label>
+      </div>
+      <div class="actions__doubles_action">
+        <button class="js-merge-start" id="btn-unir">Unir esta duplicata</button>
+        <button class="js-merge-next" id="btn-pular">Pular esta duplicata</button>
+        <button class="button-cancel" id="btn-cancelar">Cancelar</button>
+      </div>
+      <h2 class="progress__header" id="progresso">Realizando união</h2>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip">Fulano de Tal · R$ 1.500,00</div>
+  <div class="notification-inner" id="toast"><span class="notification-inner__text">Nova mensagem de Fulano</span></div>
+  <div class="feed-note__avatar" id="avatar"><img alt=""></div>
+
+  <script>
+    // A página tenta trocar o título de novo depois de carregar (setter e <title> direto).
+    setTimeout(() => { document.title = 'Kommo: Leads, Empresa Exemplo (2)'; }, 20);
+    setTimeout(() => { document.querySelector('title').textContent = 'Kommo: Contatos, Empresa Exemplo'; }, 40);
+  </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App (interface)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "CLI — contatos, 3 (ENSAIO, não une nada)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--cli", "${input:empresa}", "contatos", "3", "--ensaio"],
+      "console": "integratedTerminal",
+      "env": { "KOMMO_DEBUG": "1" }
+    },
+    {
+      "name": "CLI — leads, 3 (ENSAIO, não une nada)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--cli", "${input:empresa}", "leads", "3", "--ensaio"],
+      "console": "integratedTerminal",
+      "env": { "KOMMO_DEBUG": "1" }
+    },
+    {
+      "name": "CLI — ENSAIO (não une nada)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--cli", "${input:empresa}", "${input:tipo}", "3", "--ensaio"],
+      "console": "integratedTerminal",
+      "env": { "KOMMO_DEBUG": "1" }
+    },
+    {
+      "name": "⚠ CLI — UNIR 3 (REAL, irreversível)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--cli", "${input:empresa}", "${input:tipo}", "3"],
+      "console": "integratedTerminal",
+      "env": { "KOMMO_DEBUG": "1" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "empresa",
+      "type": "promptString",
+      "description": "Subdomínio do Kommo (ex.: minhaempresa)"
+    },
+    {
+      "id": "tipo",
+      "type": "pickString",
+      "description": "O que unir",
+      "options": ["contatos", "leads"],
+      "default": "contatos"
+    }
+  ]
+}

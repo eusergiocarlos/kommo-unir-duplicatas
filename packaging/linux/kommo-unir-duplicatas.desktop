@@ -1,0 +1,10 @@
+[Desktop Entry]
+# NÃO TESTADO LOCALMENTE. Ícone: "kommo-unir-duplicatas" é um placeholder neutro (quadrado cinza) gerado por
+# scripts/empacotar.py icone durante o build — não usamos a marca do Kommo.
+Type=Application
+Name=Kommo - Unir Duplicatas
+Comment=Automatiza o Localizar e unir duplicatas do Kommo
+Exec=KommoUnirDuplicatas
+Icon=kommo-unir-duplicatas
+Terminal=false
+Categories=Office;Utility;

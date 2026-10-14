@@ -1,0 +1,4 @@
+# Dependências de execução (faixas abertas; instalação rápida/manual).
+# Para instalação REPRODUZÍVEL use requirements.lock (versões exatas + hashes), gerado a partir de
+# requirements.in por scripts/gerar_lock.ps1 / scripts/gerar_lock.sh. Mantenha os dois coerentes.
+playwright>=1.40

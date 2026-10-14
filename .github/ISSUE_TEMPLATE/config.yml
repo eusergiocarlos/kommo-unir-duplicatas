@@ -1,0 +1,11 @@
+# Issues em branco desativadas: todo relato passa pelos modelos (que avisam sobre dados de clientes).
+blank_issues_enabled: false
+
+# Link para o aviso PRIVADO de vulnerabilidade. O GitHub exige URL ABSOLUTA aqui, e o dono/repositório ainda
+# não estão definidos — por isso está comentado (não inventamos o endereço). Depois de criar o repositório e
+# ATIVAR o Private Vulnerability Reporting (Settings → Code security), descomente e troque <dono>/<repositório>:
+#
+# contact_links:
+#   - name: Vulnerabilidade de segurança (aviso PRIVADO)
+#     url: https://github.com/<dono>/<repositório>/security/advisories/new
+#     about: Não abra issue pública para falhas de segurança. Use o aviso privado (ver SECURITY.md).

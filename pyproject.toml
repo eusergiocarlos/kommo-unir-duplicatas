@@ -1,0 +1,61 @@
+[project]
+name = "kommo-unir-duplicatas"
+version = "1.0.0"
+description = "Automatiza o 'Localizar e unir duplicatas' do Kommo (Leads e Contatos), com log e modo privacidade."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = ["playwright>=1.40"]
+
+[project.optional-dependencies]
+# Mesmas faixas de requirements-dev.in (fonte do requirements-dev.lock, que é o que o build/CI instala com hashes).
+# O ruff NÃO está no .in/.lock: entra só aqui, na mesma versão fixa usada pelo CI (ci.yml) e pelo pre-commit.
+dev = ["pytest>=8,<10", "pytest-cov>=5,<8", "pyinstaller>=6,<7", "ruff==0.17.0"]
+
+[project.scripts]
+kommo-unir-duplicatas = "kommo_duplicatas.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+# ---------------------------------------------------------------------------------------------- ruff (lint)
+# Conjunto CONSERVADOR, escolhido para passar no código atual sem reformatar o projeto (ver
+# docs/operations/ci-cd.md). O CI roda `ruff check`; `ruff format --check` é só informativo.
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = ["dist", "packaging/out"]
+
+[tool.ruff.lint]
+# E/W = pycodestyle, F = pyflakes, B = bugbear, UP = pyupgrade.
+# "I" (isort) NÃO está ativo: o projeto quebra imports longos com parênteses alinhados, estilo que o isort do
+# ruff reescreveria em ~8 arquivos (mudança só de forma). Reavaliar se o projeto adotar `ruff format`.
+select = ["E", "F", "W", "B", "UP"]
+ignore = [
+    "E501",   # linha longa: o limite de 120 é guia; strings de log/JS/mensagens às vezes passam um pouco
+    "UP031",  # "%s" de propósito nos modelos de JS (privacy.py): chaves {} do JS conflitariam com .format/f-string
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "B905",   # zip() sem strict= em testes: as listas comparadas têm tamanho controlado pelo próprio teste
+]
+
+# ---------------------------------------------------------------------------------------------- cobertura
+# Usado pelo pytest-cov (está em requirements-dev.in/.lock; o CI liga --cov automaticamente — ver
+# docs/operations/ci-cd.md). Localmente: `python -m pytest --cov`.
+[tool.coverage.run]
+source = ["kommo_duplicatas"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
