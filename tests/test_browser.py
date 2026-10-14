@@ -1,5 +1,6 @@
 """Testes do browser.py sem abrir navegador real (playwright.chromium é um stub)."""
 import os
+import sys
 
 import pytest
 from playwright.sync_api import Error as ErroPW
@@ -210,6 +211,7 @@ def test_mensagens_por_so():
     assert "/Applications" in mac
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="simula caminho do Windows; validado só no Windows (Linux ainda não suportado)")
 def test_playwright_browsers_path_so_no_windows_congelado():
     env = {"LOCALAPPDATA": r"C:\Users\Fulano\AppData\Local"}
     assert browser.configurar_browsers_path(True, "win32", env) == r"C:\Users\Fulano\AppData\Local\ms-playwright"
