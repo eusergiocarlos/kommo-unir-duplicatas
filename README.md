@@ -75,10 +75,6 @@ própria interface do Kommo, com a mesma sessão do usuário, sem usar a API.
   a acompanhar outra aba aberta do mesmo navegador; "navegador fechado" só quando **não sobra nenhuma aba**.
 - **Modo texto (CLI)** com códigos de saída, para testes e terminal.
 
-## Capturas de tela
-
-Pendente: **capturas a adicionar.** Ainda não há imagens no repositório. Quando forem incluídas, devem ser feitas
-com o modo privacidade ligado e conferidas inteiras (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Arquitetura resumida
 
